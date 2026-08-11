@@ -1,0 +1,27 @@
+name: Bug report
+description: Report incorrect behavior or a misleading analysis
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: repository
+    attributes:
+      label: Repository context
+      description: Link a public repository or describe a minimal synthetic fixture. Do not share private code or secrets.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened?
+      description: Include the command, relevant output, and what you expected instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: SponsorFit and Python versions
+      placeholder: "SponsorFit 0.1.0, Python 3.12"
+    validations:
+      required: true
+

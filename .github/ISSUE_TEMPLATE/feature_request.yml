@@ -1,0 +1,25 @@
+name: Recommendation or feature improvement
+description: Propose a better workflow, archetype, or analysis rule
+title: "[Idea]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What maintainer problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: What evidence supports the change?
+      description: Share anonymized interviews, repository examples, or a reproducible fixture.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+

@@ -1,0 +1,5 @@
+interface:
+  display_name: "SponsorFit"
+  short_description: "Find who will pay for your open-source project"
+  default_prompt: "Use $sponsorfit to analyze this repository and identify its happiest sponsors and fastest path to first revenue."
+

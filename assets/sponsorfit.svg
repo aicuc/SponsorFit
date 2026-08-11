@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" role="img" aria-labelledby="title desc">
+  <title id="title">SponsorFit</title>
+  <desc id="desc">SponsorFit wordmark with a heart-shaped growth mark.</desc>
+  <rect width="640" height="160" rx="28" fill="#0b1220"/>
+  <path d="M70 48c-21-22-55-6-55 22 0 34 55 61 55 61s55-27 55-61c0-28-34-44-55-22Z" fill="#31d07c"/>
+  <path d="m50 90 15-17 14 11 22-29" fill="none" stroke="#0b1220" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="154" y="102" fill="#f7fafc" font-family="ui-sans-serif, system-ui, sans-serif" font-size="62" font-weight="750">SponsorFit</text>
+</svg>

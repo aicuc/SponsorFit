@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sponsorfit"
+version = "0.1.0"
+description = "Find who would happily pay for your open-source project."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [{name = "SponsorFit contributors"}]
+keywords = ["open-source", "monetization", "github", "codex", "developer-tools"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+]
+dependencies = []
+
+[project.scripts]
+sponsorfit = "sponsorfit.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
