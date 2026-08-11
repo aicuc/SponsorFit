@@ -100,6 +100,18 @@ sponsorfit . --github
 
 The CLI deliberately uses conservative heuristics. For context-aware reasoning, buyer simulation, and tailored validation strategy, use the Codex Skill.
 
+## Web demo
+
+SponsorFit also includes a shareable Next.js preview for maintainers who want to try the idea before installing anything. It accepts a public GitHub repository, returns four evidence-labeled recommendations, and includes five pre-generated real-project cases.
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000`. See [`web/README.md`](web/README.md) for configuration, deployment, and MVP limits. The Python CLI and Codex Skill remain the complete analysis paths; the web experience is intentionally lightweight.
+
 ## Install as a Codex Skill
 
 Clone this project into your Codex skills directory:
