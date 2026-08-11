@@ -7,3 +7,8 @@ dist/
 build/
 sponsorfit-report.md
 sponsorfit.json
+web/node_modules/
+web/.next/
+web/.env.local
+web/*.tsbuildinfo
+web/.vercel/
