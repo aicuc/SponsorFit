@@ -36,6 +36,12 @@ Find 10 prospects via GitHub dependents and sell a narrow paid pilot.
 
 > SponsorFit does not hallucinate a market. It separates what the repository proves from what a maintainer still needs to validate.
 
+## Why this exists
+
+Many programmers know how to build valuable software but have never had the opportunity to learn customer discovery, positioning, or pricing. As a result, promising open-source projects are often overlooked—not because they lack value, but because their maintainers have not yet found the people who need them most or a sustainable way for those people to pay.
+
+SponsorFit exists to close that gap. It helps developers discover who a project is for, which real-world problems it solves, and which business models fit both the project and its community. The goal is not to turn every repository into a startup. It is to ensure that useful work does not disappear simply because its creator does not speak the language of business—and to give more open-source projects the chance to grow, earn support, and remain sustainable.
+
 ## Why SponsorFit
 
 Most monetization advice starts with a menu: SaaS, subscriptions, consulting, enterprise. SponsorFit starts somewhere more useful:
