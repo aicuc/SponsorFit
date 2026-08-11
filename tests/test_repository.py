@@ -5,10 +5,33 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from sponsorfit.repository import scan_repository
+from sponsorfit.repository import _read_pyproject_fallback, scan_repository
 
 
 class RepositoryScanTests(unittest.TestCase):
+    def test_python_310_fallback_reads_basic_pyproject_metadata(self) -> None:
+        metadata = _read_pyproject_fallback(
+            """
+            [build-system]
+            requires = ["setuptools"]
+
+            [project]
+            name = "clearpdf"
+            version = '1.2.3'
+            description = "Parse PDF files"
+            dependencies = ["example"]
+            """
+        )
+
+        self.assertEqual(
+            metadata,
+            {
+                "name": "clearpdf",
+                "version": "1.2.3",
+                "description": "Parse PDF files",
+            },
+        )
+
     def test_extracts_project_evidence_and_ignores_secrets_and_dependencies(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -36,6 +36,8 @@ MANIFEST_NAMES = {
     "package.json", "pyproject.toml", "cargo.toml", "go.mod", "gemfile",
     "composer.json", "pom.xml", "build.gradle", "requirements.txt",
 }
+PYPROJECT_METADATA_SECTIONS = {"project", "tool.poetry"}
+PYPROJECT_SCALAR_KEYS = {"name", "description", "version"}
 
 
 def _is_sensitive(path: Path) -> bool:
@@ -58,6 +60,32 @@ def _safe_text(path: Path, limit: int = 32_000) -> str:
         return raw.decode("utf-8", errors="replace")
     except OSError:
         return ""
+
+
+def _read_pyproject_fallback(text: str) -> dict[str, str]:
+    """Read basic pyproject metadata when Python's tomllib is unavailable."""
+    sections: dict[str, dict[str, str]] = {
+        section: {} for section in PYPROJECT_METADATA_SECTIONS
+    }
+    current_section = ""
+
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if line.startswith("[") and line.endswith("]"):
+            current_section = line[1:-1].strip()
+            continue
+        if current_section not in PYPROJECT_METADATA_SECTIONS or "=" not in line:
+            continue
+
+        key, raw_value = (part.strip() for part in line.split("=", 1))
+        if key not in PYPROJECT_SCALAR_KEYS or len(raw_value) < 2:
+            continue
+        quote = raw_value[0]
+        if quote not in {'"', "'"} or raw_value[-1] != quote:
+            continue
+        sections[current_section][key] = raw_value[1:-1]
+
+    return sections["project"] or sections["tool.poetry"]
 
 
 def _iter_files(root: Path, max_files: int = 5_000) -> Iterator[Path]:
@@ -88,15 +116,18 @@ def _read_manifest(path: Path) -> dict[str, Any]:
     if path.name.lower() == "pyproject.toml":
         try:
             import tomllib
-
-            parsed = tomllib.loads(text)
-            project = parsed.get("project", {})
-            poetry = parsed.get("tool", {}).get("poetry", {})
-            data = project or poetry
-            keys = ("name", "description", "version", "dependencies")
-            return {key: data[key] for key in keys if key in data}
-        except (ValueError, TypeError):
-            return {"parse_error": "Invalid TOML"}
+        except ModuleNotFoundError:
+            return _read_pyproject_fallback(text)
+        else:
+            try:
+                parsed = tomllib.loads(text)
+                project = parsed.get("project", {})
+                poetry = parsed.get("tool", {}).get("poetry", {})
+                data = project or poetry
+                keys = ("name", "description", "version", "dependencies")
+                return {key: data[key] for key in keys if key in data}
+            except (ValueError, TypeError):
+                return {"parse_error": "Invalid TOML"}
     lines = [line.strip() for line in text.splitlines() if line.strip() and not line.startswith("#")]
     return {"excerpt": lines[:30]}
 
