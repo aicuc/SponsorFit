@@ -2,6 +2,8 @@
 
 The web demo is a deliberately small discovery layer for SponsorFit. It gives a maintainer a four-part preview from public GitHub evidence, provides five pre-generated project cases, and points to the Codex Skill or Python CLI for the full analysis.
 
+**Live demo:** [sponsorfit-open-source.vercel.app](https://sponsorfit-open-source.vercel.app)
+
 ## Run locally
 
 ```bash

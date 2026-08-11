@@ -7,6 +7,10 @@
 <p align="center"><strong>Turn any open-source repo into a sustainable business.</strong></p>
 <p align="center">Find the people who would happily pay for what you already love building.</p>
 
+<p align="center">
+  <a href="https://sponsorfit-open-source.vercel.app"><strong>Try the live web demo →</strong></a>
+</p>
+
 SponsorFit reads a repository, identifies the value behind the code, simulates the buyers with the strongest reason to pay, and turns those hypotheses into a concrete validation plan. It is both a Codex Skill for deep analysis and a zero-dependency Python CLI for a fast offline first pass.
 
 ```console
@@ -103,6 +107,8 @@ The CLI deliberately uses conservative heuristics. For context-aware reasoning, 
 ## Web demo
 
 SponsorFit also includes a shareable Next.js preview for maintainers who want to try the idea before installing anything. It accepts a public GitHub repository, returns four evidence-labeled recommendations, and includes five pre-generated real-project cases.
+
+**Live:** [sponsorfit-open-source.vercel.app](https://sponsorfit-open-source.vercel.app)
 
 ```bash
 cd web
