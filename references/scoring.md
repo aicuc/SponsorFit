@@ -38,4 +38,3 @@ For competing features, rate:
 - maintainer effort, reverse-scored (15)
 
 Keep the component ratings visible. If evidence is weak, use qualitative High/Medium/Low instead of a numeric total.
-

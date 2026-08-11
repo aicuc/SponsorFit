@@ -40,4 +40,3 @@ FIRST REVENUE MOVE:
 - Prefix reasoned conclusions with **Inferred** and show the facts used.
 - Prefix buyer, demand, price, and channel claims with **Hypothesis** until externally validated.
 - Prefer “No evidence found” over filling a blank with a generic claim.
-

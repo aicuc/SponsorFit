@@ -20,6 +20,10 @@ classifiers = [
 ]
 dependencies = []
 
+[project.urls]
+Homepage = "https://github.com/aicuc/SponsorFit"
+Issues = "https://github.com/aicuc/SponsorFit/issues"
+
 [project.scripts]
 sponsorfit = "sponsorfit.cli:main"
 

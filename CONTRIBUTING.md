@@ -33,4 +33,3 @@ Distinguish repository evidence from market evidence. Do not encode an anecdote 
 5. a proposed fixture or test.
 
 By contributing, you agree that your contribution is licensed under the MIT License.
-

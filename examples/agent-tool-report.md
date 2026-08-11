@@ -41,4 +41,3 @@ Use GitHub code search, issue authors, and adjacent tool founders to find ten em
 3. Compatibility policy — Trust
 4. Shared team configuration — Enterprise
 5. Community recipe gallery — Community
-

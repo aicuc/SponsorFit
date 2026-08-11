@@ -73,4 +73,3 @@ class SponsorFitAnalysis:
         data = asdict(self)
         data["customers"] = [customer.to_dict() for customer in self.customers]
         return data
-

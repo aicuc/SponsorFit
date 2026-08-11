@@ -41,4 +41,3 @@ Find ten teams building document RAG through GitHub dependents and specialist AI
 3. Retention controls — Enterprise
 4. Difficult-document gallery — Adoption
 5. Error-corpus contribution flow — Community
-

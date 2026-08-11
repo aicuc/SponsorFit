@@ -22,4 +22,3 @@ body:
       label: Proposed behavior
     validations:
       required: true
-

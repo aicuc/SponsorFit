@@ -24,4 +24,3 @@ body:
       placeholder: "SponsorFit 0.1.0, Python 3.12"
     validations:
       required: true
-

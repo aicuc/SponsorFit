@@ -75,7 +75,7 @@ The scanner reads README files, manifests, languages, license, tests, docs, exam
 Requirements: Python 3.10+ and, only for URL input, `git`.
 
 ```bash
-git clone <repository-url> sponsorfit
+git clone https://github.com/aicuc/SponsorFit.git sponsorfit
 cd sponsorfit
 python3 -m pip install .
 sponsorfit /path/to/your/repository
@@ -106,7 +106,7 @@ Clone this project into your Codex skills directory:
 
 ```bash
 mkdir -p ~/.codex/skills
-git clone <repository-url> ~/.codex/skills/sponsorfit
+git clone https://github.com/aicuc/SponsorFit.git ~/.codex/skills/sponsorfit
 ```
 
 Restart Codex if needed, open the repository you want to analyze, and ask:
@@ -172,4 +172,3 @@ Bug reports, new repository archetypes, scoring critiques, and anonymized valida
 ## License
 
 [MIT](LICENSE) © 2026 SponsorFit contributors.
-

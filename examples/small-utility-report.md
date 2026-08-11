@@ -41,4 +41,3 @@ Interview five agencies in media-production communities. Sell one $500 custom ba
 3. Cross-platform CI — Trust
 4. Versioned support policy — Enterprise
 5. Shareable preset format — Community
-
