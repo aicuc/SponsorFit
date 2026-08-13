@@ -1,0 +1,34 @@
+[
+  {
+    "name": "pdf-ocr-engine",
+    "description": "Extract text and tables from PDF documents with OCR for RAG pipelines",
+    "files_count": 240,
+    "expected_archetype": "document-processing",
+    "expected_customer_contains": "RAG",
+    "expected_model_contains": "hosted API"
+  },
+  {
+    "name": "deployment-cli",
+    "description": "A CLI developer tool that standardizes deployment workflows",
+    "files_count": 160,
+    "expected_archetype": "developer-tool",
+    "expected_customer_contains": "Developer-tool startup",
+    "expected_model_contains": "team workflow"
+  },
+  {
+    "name": "file-renamer",
+    "description": "Rename batches of files using predictable rules",
+    "files_count": 18,
+    "expected_archetype": "small-utility",
+    "expected_customer_contains": "Engineering team",
+    "expected_model_contains": "services"
+  },
+  {
+    "name": "data-structures",
+    "description": "Reusable immutable data structures for production applications",
+    "files_count": 180,
+    "expected_archetype": "open-source-library",
+    "expected_customer_contains": "Product team",
+    "expected_model_contains": "support and implementation"
+  }
+]

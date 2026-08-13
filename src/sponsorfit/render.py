@@ -3,10 +3,56 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from .models import RepositoryEvidence, SponsorFitAnalysis
+from .models import MaintainerContext, RepositoryEvidence, SponsorFitAnalysis
 
 
-def evidence_markdown(evidence: RepositoryEvidence) -> str:
+def _source_note(evidence: RepositoryEvidence, *keys: str) -> str:
+    paths: list[str] = []
+    for key in keys:
+        for path in evidence.sources.get(key, []):
+            if path not in paths:
+                paths.append(path)
+    if len(paths) > 1 and "." in paths:
+        paths.remove(".")
+    if not paths:
+        return ""
+    shown = paths[:8]
+    suffix = f" (+{len(paths) - len(shown)} more paths)" if len(paths) > len(shown) else ""
+    return " — Source: " + ", ".join(f"`{path}`" for path in shown) + suffix
+
+
+def _github_insights(evidence: RepositoryEvidence) -> str:
+    if evidence.github.get("status") != "available":
+        return ""
+    themes = evidence.github.get("issueThemes", [])
+    dependents = evidence.github.get("dependentCandidates", [])
+    theme_lines = [
+        f"- **Recurring issue theme:** {item['theme']} ({item['count']} recent issues)"
+        for item in themes
+    ] or ["- No recurring issue theme appeared at least twice in the bounded sample."]
+    dependent_lines = [
+        f"- `{item['repository']}` — matched `{item['matched_package']}` in `{item['path']}`"
+        for item in dependents
+    ] or ["- No public code-search dependent candidates found."]
+    return """\n## GitHub usage signals
+
+Issue themes are deterministic summaries of recent public titles and labels. Dependent results are **candidates**, not verified dependency-graph facts.
+
+### Recurring issue themes
+
+{themes}
+
+### Dependent candidates
+
+{dependents}
+""".format(themes="\n".join(theme_lines), dependents="\n".join(dependent_lines))
+
+
+def evidence_markdown(
+    evidence: RepositoryEvidence,
+    context: MaintainerContext | None = None,
+) -> str:
+    context = context or MaintainerContext()
     languages = ", ".join(evidence.languages) or "Not detected"
     github = evidence.github
     github_line = github.get("reason", github.get("status", "unknown"))
@@ -16,13 +62,13 @@ def evidence_markdown(evidence: RepositoryEvidence) -> str:
 
 ## Repository
 
-- Name: {evidence.name}
-- Description: {evidence.description or 'Not found'}
-- Languages: {languages}
-- License: {evidence.license_name}
-- Files scanned: {evidence.files_count}
-- Tests / CI / docs / examples / changelog: {evidence.has_tests} / {evidence.has_ci} / {evidence.has_docs} / {evidence.has_examples} / {evidence.has_changelog}
-- Detected signals: {', '.join(evidence.signals) or 'None'}
+- Name: {evidence.name}{_source_note(evidence, 'repository')}
+- Description: {evidence.description or 'Not found'}{_source_note(evidence, 'description', 'repository')}
+- Languages: {languages}{_source_note(evidence, 'languages', 'repository')}
+- License: {evidence.license_name}{_source_note(evidence, 'license', 'repository')}
+- Files scanned: {evidence.files_count}{_source_note(evidence, 'files', 'repository')}
+- Tests / CI / docs / examples / changelog: {evidence.has_tests} / {evidence.has_ci} / {evidence.has_docs} / {evidence.has_examples} / {evidence.has_changelog}{_source_note(evidence, 'tests', 'ci', 'docs', 'examples', 'changelog', 'repository')}
+- Detected signals: {', '.join(evidence.signals) or 'None'}{_source_note(evidence, 'signals', 'repository')}
 - GitHub enrichment: {github_line}
 
 ## Manifests
@@ -31,9 +77,11 @@ def evidence_markdown(evidence: RepositoryEvidence) -> str:
 {json.dumps(evidence.manifests, indent=2, ensure_ascii=False, default=str)}
 ```
 
-## README excerpt
+## README excerpt{_source_note(evidence, 'readme', 'repository')}
 
 {evidence.readme_excerpt or '_No README content found._'}
+{_maintainer_context_markdown(context)}
+{_github_insights(evidence)}
 """
 
 
@@ -44,7 +92,26 @@ def _table(rows: list[list[Any]], headers: list[str]) -> str:
     return "\n".join(lines)
 
 
-def report_markdown(evidence: RepositoryEvidence, analysis: SponsorFitAnalysis) -> str:
+def _maintainer_context_markdown(context: MaintainerContext) -> str:
+    if context.is_empty:
+        return ""
+    sections = []
+    for title, values in (
+        ("Constraints", context.constraints),
+        ("Audience evidence", context.audience_evidence),
+        ("Interview notes", context.interview_notes),
+    ):
+        if values:
+            sections.append(f"### {title}\n\n" + "\n".join(f"- {value}" for value in values))
+    return "## Maintainer-provided context\n\nThese statements are maintainer input, not repository observations.\n\n" + "\n\n".join(sections)
+
+
+def report_markdown(
+    evidence: RepositoryEvidence,
+    analysis: SponsorFitAnalysis,
+    context: MaintainerContext | None = None,
+) -> str:
+    context = context or MaintainerContext()
     top = analysis.customers[0]
     customer_rows = [
         [index, item.customer_type, item.pain_point, item.budget, item.total]
@@ -111,17 +178,23 @@ def report_markdown(evidence: RepositoryEvidence, analysis: SponsorFitAnalysis) 
         "Ask for a paid commitment or explicit reason for declining.",
         "Keep, change, or kill the hypothesis based on repeated evidence.",
     ]
+    context_section = _maintainer_context_markdown(context)
+    github_section = _github_insights(evidence)
     return f"""# SponsorFit Report: {evidence.name}
 
 > This offline MVP labels repository facts as **Observed**, reasoned conclusions as **Inferred**, and unvalidated demand as **Hypothesis**.
 
 ## 1. Project Snapshot
 
-- **Observed — What it does:** {evidence.description or 'No clear description was found; improve the README before commercial outreach.'}
-- **Observed — Technical footprint:** {', '.join(evidence.languages) or 'Unknown'}; {evidence.files_count} files scanned; {evidence.license_name} license.
+- **Observed — What it does:** {evidence.description or 'No clear description was found; improve the README before commercial outreach.'}{_source_note(evidence, 'description', 'repository')}
+- **Observed — Technical footprint:** {', '.join(evidence.languages) or 'Unknown'}; {evidence.files_count} files scanned; {evidence.license_name} license.{_source_note(evidence, 'languages', 'manifests', 'license', 'tests', 'ci', 'docs', 'examples', 'changelog', 'files', 'repository')}
 - **Inferred — Primary category:** {analysis.archetype}
 - **Inferred — Current maturity:** {analysis.maturity}
 - **Inferred — Monetization readiness:** {analysis.monetization_readiness}
+
+{context_section}
+
+{github_section}
 
 ## 2. What This Project Really Sells
 
@@ -232,4 +305,74 @@ BUILD THIS NEXT:
 FIRST REVENUE MOVE:
 Find 10 prospects via {first_channel} and sell a narrow paid pilot.
 ```
+"""
+
+
+def interview_worksheet_markdown(
+    evidence: RepositoryEvidence,
+    analysis: SponsorFitAnalysis,
+    context: MaintainerContext | None = None,
+) -> str:
+    context = context or MaintainerContext()
+    top = analysis.customers[0]
+    constraints = "\n".join(f"- {item}" for item in context.constraints) or "- _None supplied_"
+    audience = "\n".join(f"- {item}" for item in context.audience_evidence) or "- _None supplied_"
+    notes = "\n".join(f"- {item}" for item in context.interview_notes) or "- _None supplied_"
+    return f"""# Customer Interview Worksheet: {evidence.name}
+
+> Reuse one copy per conversation. The customer and price below are **Hypotheses**, not validated facts.
+
+## Starting hypothesis
+
+- Project: {evidence.name}
+- Customer: {top.customer_type}
+- Suspected pain: {top.pain_point}
+- Current reach channel: {top.reach}
+- Price hypothesis: {top.budget}
+
+## Maintainer context
+
+### Constraints
+
+{constraints}
+
+### Existing audience evidence
+
+{audience}
+
+### Existing interview notes
+
+{notes}
+
+## Interview record
+
+- Date:
+- Interviewee role and organization type:
+- How they encountered the project or problem:
+- Current workaround:
+- Frequency and cost of the problem:
+- Most recent concrete incident:
+- Who owns the problem and budget:
+- What they have already tried or paid for:
+- Required outcome before they would pay:
+- Security, deployment, procurement, or policy constraints:
+- Next step and commitment:
+
+## Questions to ask
+
+1. Tell me about the last time this problem happened.
+2. What did you do, who was involved, and how long did it take?
+3. What breaks or gets delayed if you do nothing?
+4. What have you tried, and what did it cost?
+5. Who would approve budget for a solution?
+6. What evidence or capability would make a paid pilot credible?
+
+## Evidence after the call
+
+- Observed facts:
+- Quotes worth preserving:
+- Hypothesis strengthened or weakened:
+- Price or budget evidence:
+- Follow-up date:
+- Keep / change / kill this customer hypothesis:
 """

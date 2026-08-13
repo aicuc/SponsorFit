@@ -4,8 +4,14 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
-from sponsorfit.repository import _read_pyproject_fallback, scan_repository
+from sponsorfit.repository import (
+    _find_dependent_candidates,
+    _issue_themes,
+    _read_pyproject_fallback,
+    scan_repository,
+)
 
 
 class RepositoryScanTests(unittest.TestCase):
@@ -59,6 +65,45 @@ class RepositoryScanTests(unittest.TestCase):
             self.assertIn("Python", evidence.languages)
             self.assertNotIn("JavaScript", evidence.languages)
             self.assertNotIn("do-not-read", json.dumps(evidence.to_dict()))
+            self.assertEqual(evidence.sources["description"], ["README.md"])
+            self.assertIn("src/main.py", evidence.sources["languages"])
+            self.assertEqual(evidence.sources["tests"], ["tests/"])
+
+    def test_groups_only_recurring_issue_themes(self) -> None:
+        themes = _issue_themes([
+            {"title": "Install fails on Windows", "labels": [{"name": "bug"}]},
+            {"title": "Windows installation path is broken", "labels": [{"name": "bug"}]},
+            {"title": "Add dark mode", "labels": [{"name": "enhancement"}]},
+        ])
+
+        self.assertEqual(themes[0]["theme"], "installation")
+        self.assertEqual(themes[0]["count"], 2)
+        self.assertNotIn("dark mode", json.dumps(themes).lower())
+
+    @patch("sponsorfit.repository.subprocess.run")
+    def test_code_search_returns_deduplicated_dependent_candidates(self, run) -> None:
+        run.return_value.stdout = json.dumps([
+            {
+                "path": "pyproject.toml",
+                "repository": {"nameWithOwner": "buyer/app"},
+                "url": "https://github.com/buyer/app/blob/main/pyproject.toml",
+            },
+            {
+                "path": "requirements.txt",
+                "repository": {"nameWithOwner": "buyer/app"},
+                "url": "https://github.com/buyer/app/blob/main/requirements.txt",
+            },
+            {
+                "path": "pyproject.toml",
+                "repository": {"nameWithOwner": "owner/tool"},
+                "url": "https://github.com/owner/tool/blob/main/pyproject.toml",
+            },
+        ])
+
+        candidates = _find_dependent_candidates("owner/tool", ["tool"])
+
+        self.assertEqual([item["repository"] for item in candidates], ["buyer/app"])
+        self.assertEqual(candidates[0]["matched_package"], "tool")
 
     def test_reports_unknown_license_without_guessing(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

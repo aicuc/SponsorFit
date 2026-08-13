@@ -106,7 +106,29 @@ sponsorfit . -o sponsorfit-report.md
 sponsorfit . --format evidence
 sponsorfit . --format json > sponsorfit.json
 sponsorfit . --github
+sponsorfit . --format worksheet -o customer-interview.md
 ```
+
+Add maintainer knowledge with repeatable flags:
+
+```bash
+sponsorfit . \
+  --constraint "Keep local use free" \
+  --audience-evidence "Three agencies use batch mode" \
+  --interview-note "Upgrades cause monthly incidents"
+```
+
+For reusable context, pass `--context sponsorfit-context.json`. Command-line values are appended to file values.
+
+```json
+{
+  "constraints": ["Do not process customer data in a hosted service"],
+  "audience_evidence": ["Five teams requested CI support"],
+  "interview_notes": ["The platform lead controls the budget"]
+}
+```
+
+With `--github`, SponsorFit groups recurring themes from recent issue titles and labels. It also uses public GitHub code search to find possible dependent repositories. These are labeled **dependent candidates** because GitHub does not provide a supported API that enumerates every repository dependent.
 
 The CLI deliberately uses conservative heuristics. For context-aware reasoning, buyer simulation, and tailored validation strategy, use the Codex Skill.
 
@@ -181,11 +203,11 @@ The project intentionally uses the Python standard library. See [CONTRIBUTING.md
 - [x] Git URL support and optional `gh` enrichment
 - [x] Evidence labeling, customer scoring, revenue ladder, and share card
 - [x] Codex Skill and deterministic CLI companion
-- [ ] Quote repository paths beside every observation in CLI reports
-- [ ] Detect GitHub dependents and recurring issue themes more deeply
-- [ ] Let maintainers supply constraints, audience evidence, and interview notes
-- [ ] Export a reusable customer-interview worksheet
-- [ ] Add benchmark fixtures for more repository archetypes
+- [x] Quote repository paths beside every observation in CLI reports
+- [x] Detect GitHub dependents and recurring issue themes more deeply
+- [x] Let maintainers supply constraints, audience evidence, and interview notes
+- [x] Export a reusable customer-interview worksheet
+- [x] Add benchmark fixtures for more repository archetypes
 
 The roadmap follows user evidence. Open an issue describing the repository, the output that was wrong, and what a real buyer told you.
 
