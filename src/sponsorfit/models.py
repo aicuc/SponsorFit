@@ -24,11 +24,28 @@ class RepositoryEvidence:
     has_changelog: bool = False
     signals: list[str] = field(default_factory=list)
     github: dict[str, Any] = field(default_factory=dict)
+    sources: dict[str, list[str]] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
         data["root"] = str(self.root)
         return data
+
+
+@dataclass
+class MaintainerContext:
+    """Optional evidence and constraints supplied directly by a maintainer."""
+
+    constraints: list[str] = field(default_factory=list)
+    audience_evidence: list[str] = field(default_factory=list)
+    interview_notes: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, list[str]]:
+        return asdict(self)
+
+    @property
+    def is_empty(self) -> bool:
+        return not (self.constraints or self.audience_evidence or self.interview_notes)
 
 
 @dataclass(frozen=True)

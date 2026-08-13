@@ -24,6 +24,7 @@ SENSITIVE_NAMES = {
     "id_rsa", "id_ed25519", ".npmrc", ".pypirc",
 }
 SENSITIVE_SUFFIXES = {".pem", ".key", ".p12", ".pfx"}
+IGNORED_FILES = {".DS_Store"}
 TEXT_EXTENSIONS = {
     ".py": "Python", ".js": "JavaScript", ".jsx": "JavaScript",
     ".ts": "TypeScript", ".tsx": "TypeScript", ".go": "Go",
@@ -38,6 +39,15 @@ MANIFEST_NAMES = {
 }
 PYPROJECT_METADATA_SECTIONS = {"project", "tool.poetry"}
 PYPROJECT_SCALAR_KEYS = {"name", "description", "version"}
+ISSUE_THEME_TERMS = {
+    "installation": ("install", "setup", "packag", "dependency"),
+    "compatibility": ("windows", "macos", "linux", "python 3", "node ", "version", "compatib"),
+    "performance": ("slow", "performance", "latency", "memory", "timeout"),
+    "reliability": ("crash", "fail", "broken", "error", "retry", "hang"),
+    "integration": ("integration", "plugin", "api", "webhook", "connector"),
+    "documentation": ("docs", "documentation", "example", "tutorial"),
+    "security": ("security", "vulnerability", "cve", "permission", "auth"),
+}
 
 
 def _is_sensitive(path: Path) -> bool:
@@ -93,6 +103,8 @@ def _iter_files(root: Path, max_files: int = 5_000) -> Iterator[Path]:
     for current, dirs, files in os.walk(root):
         dirs[:] = sorted(d for d in dirs if d not in IGNORED_DIRS and not d.startswith("."))
         for filename in sorted(files):
+            if filename in IGNORED_FILES:
+                continue
             path = Path(current) / filename
             if path.is_symlink() or _is_sensitive(path):
                 continue
@@ -144,7 +156,10 @@ def _description_from_readme(text: str) -> str:
 
 
 def _detect_license(root: Path) -> str:
-    candidates = sorted(root.glob("LICENSE*")) + sorted(root.glob("COPYING*"))
+    candidates = [
+        path for path in sorted(root.glob("LICENSE*")) + sorted(root.glob("COPYING*"))
+        if not path.is_symlink()
+    ]
     if not candidates:
         return "Unknown"
     text = _safe_text(candidates[0], 8_000).lower()
@@ -170,7 +185,61 @@ def _git_remote(root: Path) -> str:
         return ""
 
 
-def _github_metadata(root: Path) -> dict[str, Any]:
+def _issue_themes(issues: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return deterministic themes that recur in at least two issue titles/labels."""
+    grouped: dict[str, list[str]] = {}
+    for issue in issues:
+        title = str(issue.get("title", "")).strip()
+        labels = issue.get("labels", [])
+        label_text = " ".join(
+            str(label.get("name", "")) if isinstance(label, dict) else str(label)
+            for label in labels if label
+        )
+        haystack = f"{title} {label_text}".lower()
+        for theme, terms in ISSUE_THEME_TERMS.items():
+            if any(term in haystack for term in terms):
+                grouped.setdefault(theme, []).append(title)
+
+    return [
+        {"theme": theme, "count": len(titles), "sample_titles": titles[:3]}
+        for theme, titles in sorted(grouped.items(), key=lambda item: -len(item[1]))
+        if len(titles) >= 2
+    ]
+
+
+def _find_dependent_candidates(repo_name: str, package_names: list[str]) -> list[dict[str, str]]:
+    """Find public code-search matches; these are candidates, not verified dependents."""
+    candidates: dict[str, dict[str, str]] = {}
+    for package_name in package_names[:3]:
+        try:
+            result = subprocess.run(
+                [
+                    "gh", "search", "code", package_name, "--limit", "20",
+                    "--json", "path,repository,url",
+                ],
+                check=True, capture_output=True, text=True, timeout=15,
+            )
+            matches = json.loads(result.stdout)
+        except (OSError, subprocess.SubprocessError, json.JSONDecodeError, TypeError):
+            continue
+        for match in matches if isinstance(matches, list) else []:
+            repository = match.get("repository", {})
+            matched_repo = (
+                repository.get("nameWithOwner", "") if isinstance(repository, dict)
+                else str(repository)
+            )
+            if not matched_repo or matched_repo.casefold() == repo_name.casefold():
+                continue
+            candidates.setdefault(matched_repo, {
+                "repository": matched_repo,
+                "path": str(match.get("path", "")),
+                "url": str(match.get("url", "")),
+                "matched_package": package_name,
+            })
+    return [candidates[key] for key in sorted(candidates)]
+
+
+def _github_metadata(root: Path, package_names: list[str] | None = None) -> dict[str, Any]:
     if not shutil.which("gh"):
         return {"status": "unavailable", "reason": "gh is not installed"}
     remote = _git_remote(root)
@@ -186,7 +255,7 @@ def _github_metadata(root: Path) -> dict[str, Any]:
         repo_name = data.get("nameWithOwner")
         if repo_name:
             enrichments = {
-                "recentIssues": ["gh", "issue", "list", "--repo", repo_name, "--limit", "20", "--json", "title,state,labels,comments"],
+                "recentIssues": ["gh", "issue", "list", "--repo", repo_name, "--limit", "50", "--json", "title,state,labels,comments"],
                 "recentPullRequests": ["gh", "pr", "list", "--repo", repo_name, "--limit", "20", "--json", "title,state,labels,author"],
                 "recentReleases": ["gh", "release", "list", "--repo", repo_name, "--limit", "10", "--json", "tagName,name,publishedAt,isLatest"],
             }
@@ -198,6 +267,10 @@ def _github_metadata(root: Path) -> dict[str, Any]:
                     data[key] = json.loads(extra.stdout)
                 except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
                     data[key] = []
+            data["issueThemes"] = _issue_themes(data.get("recentIssues", []))
+            data["dependentCandidates"] = _find_dependent_candidates(
+                repo_name, package_names or [root.name]
+            )
         data["status"] = "available"
         return data
     except (OSError, subprocess.SubprocessError, json.JSONDecodeError) as exc:
@@ -215,6 +288,10 @@ def scan_repository(root: Path, include_github: bool = False) -> RepositoryEvide
     language_bytes: Counter[str] = Counter()
     manifests: dict[str, dict[str, Any]] = {}
     signals: list[str] = []
+    source_paths: dict[str, list[str]] = {
+        "repository": ["."],
+        "files": [str(path.relative_to(root)) for path in files[:12]],
+    }
 
     for path in files:
         language = TEXT_EXTENSIONS.get(path.suffix.lower())
@@ -223,12 +300,20 @@ def scan_repository(root: Path, include_github: bool = False) -> RepositoryEvide
                 language_bytes[language] += path.stat().st_size
             except OSError:
                 pass
+            source_paths.setdefault("languages", [])
+            relative = str(path.relative_to(root))
+            if len(source_paths["languages"]) < 12:
+                source_paths["languages"].append(relative)
         if path.name.lower() in MANIFEST_NAMES and len(path.relative_to(root).parts) <= 3:
-            manifests[str(path.relative_to(root))] = _read_manifest(path)
+            relative = str(path.relative_to(root))
+            manifests[relative] = _read_manifest(path)
+            source_paths.setdefault("manifests", []).append(relative)
 
     readmes = sorted(files, key=lambda p: (not p.name.lower().startswith("readme"), len(p.parts)))
     readme_path = next((path for path in readmes if path.name.lower().startswith("readme")), None)
     readme = _safe_text(readme_path, 40_000) if readme_path else ""
+    if readme_path:
+        source_paths["readme"] = [str(readme_path.relative_to(root))]
 
     joined = (readme + "\n" + json.dumps(manifests, default=str)).lower()
     for label, terms in {
@@ -242,12 +327,51 @@ def scan_repository(root: Path, include_github: bool = False) -> RepositoryEvide
             signals.append(label)
 
     description = _description_from_readme(readme)
+    if description and readme_path:
+        source_paths["description"] = [str(readme_path.relative_to(root))]
     if not description:
-        for manifest in manifests.values():
+        for manifest_path, manifest in manifests.items():
             candidate = manifest.get("description")
             if isinstance(candidate, str):
                 description = candidate[:300]
+                source_paths["description"] = [manifest_path]
                 break
+
+    license_candidates = [
+        path for path in sorted(root.glob("LICENSE*")) + sorted(root.glob("COPYING*"))
+        if not path.is_symlink()
+    ]
+    if license_candidates:
+        source_paths["license"] = [str(license_candidates[0].relative_to(root))]
+    if {"tests", "test", "spec", "__tests__"} & lower_parts:
+        source_paths["tests"] = [
+            f"{name}/" for name in ("tests", "test", "spec", "__tests__")
+            if (root / name).exists()
+        ][:4]
+    if (root / ".github" / "workflows").is_dir():
+        source_paths["ci"] = [".github/workflows/"]
+    for key, names_for_key in {
+        "docs": ("docs", "documentation"),
+        "examples": ("examples", "example", "samples"),
+    }.items():
+        found = [f"{name}/" for name in names_for_key if (root / name).exists()]
+        if found:
+            source_paths[key] = found
+    changelog_paths = [
+        str(path.relative_to(root)) for path in files
+        if path.name.lower().startswith(("changelog", "changes", "history"))
+    ][:4]
+    if changelog_paths:
+        source_paths["changelog"] = changelog_paths
+    if signals:
+        source_paths["signals"] = list(dict.fromkeys(
+            source_paths.get("readme", []) + source_paths.get("manifests", [])
+        ))
+
+    package_names = [
+        value.get("name") for value in manifests.values()
+        if isinstance(value.get("name"), str) and len(value["name"].strip()) >= 3
+    ]
 
     return RepositoryEvidence(
         name=root.name,
@@ -264,7 +388,8 @@ def scan_repository(root: Path, include_github: bool = False) -> RepositoryEvide
         has_examples=bool({"examples", "example", "samples"} & lower_parts),
         has_changelog=any(name.startswith(("changelog", "changes", "history")) for name in names),
         signals=signals,
-        github=_github_metadata(root) if include_github else {"status": "not_requested"},
+        github=_github_metadata(root, package_names or [root.name]) if include_github else {"status": "not_requested"},
+        sources=source_paths,
     )
 
 
