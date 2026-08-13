@@ -38,3 +38,21 @@ For competing features, rate:
 - maintainer effort, reverse-scored (15)
 
 Keep the component ratings visible. If evidence is weak, use qualitative High/Medium/Low instead of a numeric total.
+
+## Monetization path score: 100 points
+
+Rate each candidate path from 1–5, then multiply by its weight.
+
+| Dimension | Weight | A high score means |
+| --- | ---: | --- |
+| Buyer pain and budget | 20 | A budget owner has a frequent, costly, or risky problem |
+| Commercial analog evidence | 20 | Comparable businesses show an observable transaction for this outcome |
+| Current product fit | 15 | Most of the paid outcome can be delivered now or manually |
+| Reachability | 15 | The first 20 prospects can be named and contacted through a specific channel |
+| Speed to first sale | 10 | A payment test can run before substantial building |
+| Retention or repeatability | 10 | The outcome naturally renews, expands, or repeats |
+| Delivery leverage | 10 | Revenue can grow without proportional custom labor |
+
+Show the component ratings and evidence notes for the top three paths. Penalize a path when competitor success depends on assets this project lacks, such as proprietary data, an enterprise sales team, regulatory certification, an installed customer base, or a dominant distribution channel.
+
+The highest score is a testing priority, not proof. Prefer a lower-ceiling path when it creates faster buyer learning and a credible transition to the longer-term model.
