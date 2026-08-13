@@ -1,4 +1,4 @@
 interface:
   display_name: "SponsorFit"
-  short_description: "Find who will pay for your open-source project"
-  default_prompt: "Use $sponsorfit to analyze this repository and identify its happiest sponsors and fastest path to first revenue."
+  short_description: "Research competitors and find a path to revenue"
+  default_prompt: "Use $sponsorfit to research competitors for this repository or idea, explain how they sell, and recommend the fastest evidence-backed path to revenue."
